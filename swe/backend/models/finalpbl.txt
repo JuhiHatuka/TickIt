@@ -1,0 +1,822 @@
+import java.io.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+abstract class Plannable {
+    protected String title;
+    protected String description;
+
+    public Plannable(String title, String description) {
+        this.title = title;
+        this.description = description;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public abstract void displayDetails();
+}
+
+enum Priority {
+    HIGH, MEDIUM, LOW
+}
+
+class Task extends Plannable {
+    private LocalDate dueDate;
+    private Priority priority;
+    private boolean completed;
+
+    public Task(String title, String description, LocalDate dueDate, Priority priority) {
+        super(title, description);
+        this.dueDate = dueDate;
+        this.priority = priority;
+        this.completed = false;
+    }
+
+    public void markComplete() {
+        this.completed = true;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public LocalDate getDueDate() {
+        return dueDate;
+    }
+
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public void update(String newDescription, LocalDate newDueDate, Priority newPriority) {
+        this.description = newDescription;
+        this.dueDate = newDueDate;
+        this.priority = newPriority;
+    }
+
+    @Override
+    public void displayDetails() {
+        System.out.println("\nTASK: " + title);
+        System.out.println("Description: " + description);
+        System.out.println("Due Date: " + dueDate);
+        System.out.println("Priority: " + priority);
+        System.out.println("Status: " + (completed ? "Completed" : "Pending"));
+        System.out.println();
+    }
+
+    @Override
+    public String toString() {
+        return title + " (Due: " + dueDate + ", Priority: " + priority + ", Status: "
+                + (completed ? "TASK DONE :)" : "Scheduled") + ")";
+    }
+}
+
+class Event extends Plannable {
+    private LocalDate date;
+    private LocalTime startTime, endTime;
+    private String location;
+    private boolean completed;
+
+    public Event(String title, String description, LocalDate date, LocalTime startTime,
+            LocalTime endTime, String location) {
+
+        super(title, description);
+        this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.location = location;
+        this.completed = false;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void markComplete() {
+        this.completed = true;
+    }
+
+    public void update(String newDescription, LocalDate newDate, LocalTime newStart, LocalTime newEnd,
+            String newLocation) {
+        this.description = newDescription;
+        this.date = newDate;
+        this.startTime = newStart;
+        this.endTime = newEnd;
+        this.location = newLocation;
+    }
+
+    @Override
+    public void displayDetails() {
+        System.out.println("\nEVENT: " + title);
+        System.out.println("Description: " + description);
+        System.out.println("Date: " + date);
+        System.out.println("Time: " + startTime + " - " + endTime);
+        System.out.println("Location: " + location);
+        System.out.println("Status: " + (completed ? "Completed :)" : "Scheduled"));
+        System.out.println();
+    }
+
+    @Override
+    public String toString() {
+        return title + " (Date: " + date + ", Time: " + startTime + " - " + endTime + ", Loc: " + location + ")";
+    }
+}
+
+interface ReminderInterface {
+    void setReminder(String time);
+
+    void notifyUser();
+}
+
+class ReminderSystem implements ReminderInterface {
+    public void setReminder(String time) {
+        System.out.println("Reminder set for: " + time);
+    }
+
+    public void notifyUser() {
+        System.out.println("Reminder: You have an upcoming task/event!");
+    }
+}
+
+class Reminder {
+    private Plannable item;
+    private LocalTime reminderTime;
+    private boolean notified;
+
+    public Reminder(Plannable item, LocalTime reminderTime) {
+        this.item = item;
+        this.reminderTime = reminderTime;
+        this.notified = false;
+    }
+
+    public void checkAndNotify() {
+        if (!notified && LocalTime.now().isAfter(reminderTime)) {
+            System.out.println("REMINDER: " + item.getTitle() + " is coming up!");
+            notified = true;
+        }
+    }
+
+    public Plannable getItem() {
+        return item;
+    }
+
+    public LocalTime getReminderTime() {
+        return reminderTime;
+    }
+
+    public boolean isNotified() {
+        return notified;
+    }
+}
+
+class SimpleReminder {
+    private String message;
+    private LocalTime reminderTime;
+    private boolean notified = false;
+
+    public SimpleReminder(String message, LocalTime reminderTime) {
+        this.message = message;
+        this.reminderTime = reminderTime;
+    }
+
+    public void checkAndNotify() {
+        if (!notified && LocalTime.now().isAfter(reminderTime)) {
+            System.out.println("REMINDER: " + message);
+            notified = true;
+        }
+    }
+
+    public LocalTime getReminderTime() {
+        return reminderTime;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public boolean isNotified() {
+        return notified;
+    }
+}
+
+class CalendarView {
+    private Planner planner;
+
+    public CalendarView(Planner planner) {
+        this.planner = planner;
+    }
+
+    public void displayCalendar() {
+
+        final String RESET = "\u001B[0m";
+        final String YELLOW = "\u001B[33m";
+        final String CYAN = "\u001B[36m";
+        final String MAGENTA = "\u001B[35m";
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.print("Enter month (1-12): ");
+        int month = Integer.parseInt(sc.nextLine().trim());
+
+        System.out.print("Enter year: ");
+        int year = Integer.parseInt(sc.nextLine().trim());
+
+        LocalDate firstDay = LocalDate.of(year, month, 1);
+        int daysInMonth = firstDay.lengthOfMonth();
+        int dayOfWeek = firstDay.getDayOfWeek().getValue();
+
+        System.out.println("\n" + firstDay.getMonth() + " " + year);
+        System.out.println("Mon Tue Wed Thu Fri Sat Sun");
+
+        int count = 0;
+
+        for (int i = 1; i < dayOfWeek; i++) {
+            System.out.print("    ");
+            count++;
+        }
+
+        for (int day = 1; day <= daysInMonth; day++) {
+            LocalDate curr = LocalDate.of(year, month, day);
+            String ds = String.format("%3d", day);
+
+            boolean hasT = (planner != null) && planner.hasTaskOnDate(curr);
+            boolean hasE = (planner != null) && planner.hasEventOnDate(curr);
+
+            if (hasT && hasE) {
+                ds = MAGENTA + ds + "*" + RESET;
+            } else if (hasT) {
+                ds = YELLOW + ds + "t" + RESET;
+            } else if (hasE) {
+                ds = CYAN + ds + "e" + RESET;
+            }
+
+            System.out.print(ds + " ");
+            count++;
+
+            if (count % 7 == 0) {
+                System.out.println();
+            }
+        }
+
+        System.out.println("\n" + MAGENTA + "* = Tasks & Events" + RESET + ", "
+                + YELLOW + "t = Tasks" + RESET + ", "
+                + CYAN + "e = Events" + RESET);
+
+    }
+}
+
+class Planner {
+
+    private List<Plannable> items = new ArrayList<>();
+    private List<Reminder> reminders = new ArrayList<>();
+    private List<SimpleReminder> simpleReminders = new ArrayList<>();
+    private CalendarView calendarView = new CalendarView(this);
+
+    public void addTask(String title, String description, LocalDate dueDate, Priority priority) {
+        items.add(new Task(title, description, dueDate, priority));
+        System.out.println("Task added!\n");
+    }
+
+    public void addEvent(String title, String description, LocalDate date, LocalTime start,
+            LocalTime end, String location) {
+
+        if (hasTimeConflict(date, start, end)) {
+            System.out.println("Time conflict! Event not added.\n");
+            return;
+        }
+
+        items.add(new Event(title, description, date, start, end, location));
+        System.out.println("Event added!\n");
+    }
+
+    public void displayAll() {
+        if (items.isEmpty()) {
+            System.out.println("No tasks or events found!\n");
+            return;
+        }
+        items.forEach(Plannable::displayDetails);
+    }
+
+    public void displayTasksOnly() {
+        boolean found = false;
+        for (Plannable p : items) {
+            if (p instanceof Task) {
+                p.displayDetails();
+                found = true;
+            }
+        }
+        if (!found)
+            System.out.println("No tasks in the record.\n");
+    }
+
+    public void displayEventsOnly() {
+        boolean found = false;
+        for (Plannable p : items) {
+            if (p instanceof Event) {
+                p.displayDetails();
+                found = true;
+            }
+        }
+        if (!found)
+            System.out.println("No events.\n");
+    }
+
+    public void markTaskComplete(String title) {
+        for (Plannable p : items) {
+            if (p instanceof Task && p.getTitle().equalsIgnoreCase(title)) {
+                ((Task) p).markComplete();
+                System.out.println("Task completed!\n");
+                return;
+            }
+        }
+        System.out.println("Task not found.\n");
+    }
+
+    public void updateItem(String title, Scanner sc) {
+        for (Plannable p : items) {
+            if (p.getTitle().equalsIgnoreCase(title)) {
+
+                if (p instanceof Task) {
+                    Task t = (Task) p;
+
+                    System.out.print("New description: ");
+                    String desc = sc.nextLine();
+
+                    System.out.print("New deadline (YYYY-MM-DD): ");
+                    LocalDate d = LocalDate.parse(sc.nextLine());
+
+                    System.out.print("Priority (1=HIGH 2=MED 3=LOW): ");
+                    int pr = Integer.parseInt(sc.nextLine());
+                    Priority prio = (pr == 1) ? Priority.HIGH : (pr == 3) ? Priority.LOW : Priority.MEDIUM;
+
+                    t.update(desc, d, prio);
+                } else if (p instanceof Event) {
+                    Event e = (Event) p;
+
+                    System.out.print("New description: ");
+                    String desc = sc.nextLine();
+
+                    System.out.print("New date: ");
+                    LocalDate date = LocalDate.parse(sc.nextLine());
+
+                    System.out.print("New start time: ");
+                    LocalTime st = LocalTime.parse(sc.nextLine());
+
+                    System.out.print("New end time: ");
+                    LocalTime et = LocalTime.parse(sc.nextLine());
+
+                    System.out.print("New location: ");
+                    String loc = sc.nextLine();
+
+                    e.update(desc, date, st, et, loc);
+                }
+
+                System.out.println("Successful Update!\n");
+                return;
+            }
+        }
+        System.out.println("Item not found.\n");
+    }
+
+    public void deleteItem(String title) {
+        Iterator<Plannable> itr = items.iterator();
+
+        while (itr.hasNext()) {
+            Plannable p = itr.next();
+
+            if (p.getTitle().equalsIgnoreCase(title)) {
+                itr.remove();
+                System.out.println("Deleted!\n");
+                return;
+            }
+        }
+
+        System.out.println("Item not found.\n");
+    }
+
+    public void searchByDate(String dateStr) {
+        LocalDate date = LocalDate.parse(dateStr);
+        boolean found = false;
+
+        for (Plannable p : items) {
+            if (p instanceof Task && ((Task) p).getDueDate().equals(date)) {
+                System.out.println("Yes, you do have an event planned ;-)");
+                p.displayDetails();
+                found = true;
+            } else if (p instanceof Event && ((Event) p).getDate().equals(date)) {
+                System.out.println("Yes, you do have a task scheduled ;-)");
+                p.displayDetails();
+                found = true;
+            }
+        }
+
+        if (!found) {
+            System.out.println("No items.\n");
+        }
+    }
+
+    public void setReminder(String title, String timeStr) {
+        LocalTime rt;
+        String s = timeStr.trim();
+
+        try {
+            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            LocalDateTime ldt = LocalDateTime.parse(s, dtf);
+            rt = ldt.toLocalTime();
+        } catch (Exception e1) {
+            try {
+                rt = LocalTime.parse(s);
+            } catch (Exception e2) {
+                System.out.println("Invalid time! Use HH:MM or YYYY-MM-DD HH:MM\n");
+                return;
+            }
+        }
+
+        for (Plannable p : items) {
+            if (p.getTitle().equalsIgnoreCase(title)) {
+                reminders.add(new Reminder(p, rt));
+                System.out.println("Reminder added for: " + title + " at " + rt + "\n");
+                return;
+            }
+        }
+
+        System.out.println("Item not found.\n");
+    }
+
+    public void addSimpleReminder(String message, LocalTime time) {
+        if (message.trim().isEmpty()) {
+            System.out.println("Message cannot be empty!\n");
+            return;
+        }
+
+        simpleReminders.add(new SimpleReminder(message, time));
+        System.out.println("Simple reminder added!\n");
+    }
+
+    public void processReminders() {
+        reminders.forEach(Reminder::checkAndNotify);
+        simpleReminders.forEach(SimpleReminder::checkAndNotify);
+    }
+
+    public void displayTimeBasedReminders() {
+        System.out.println("\n==== Reminders ====");
+
+        if (reminders.isEmpty()) {
+            System.out.println("No reminders added yet.\n");
+            return;
+        }
+
+        for (Reminder r : reminders) {
+            System.out.println("• " + r.getItem().getTitle());
+            System.out.println("  Time: " + r.getReminderTime());
+            System.out.println("  Status: " + (r.isNotified() ? "Notified" : "Pending"));
+            System.out.println();
+        }
+    }
+
+    public boolean hasTimeConflict(LocalDate date, LocalTime start, LocalTime end) {
+
+        for (Plannable p : items) {
+            if (p instanceof Event) {
+
+                Event e = (Event) p;
+
+                if (e.getDate().equals(date)) {
+
+                    boolean conflict = (start.isAfter(e.getStartTime()) && start.isBefore(e.getEndTime())) ||
+                            (end.isAfter(e.getStartTime()) && end.isBefore(e.getEndTime())) ||
+                            start.equals(e.getStartTime()) ||
+                            end.equals(e.getEndTime());
+
+                    if (conflict)
+                        return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean hasTaskOnDate(LocalDate date) {
+        return items.stream()
+                .anyMatch(p -> p instanceof Task && ((Task) p).getDueDate().equals(date));
+    }
+
+    public boolean hasEventOnDate(LocalDate date) {
+        return items.stream()
+                .anyMatch(p -> p instanceof Event && ((Event) p).getDate().equals(date));
+    }
+
+    public void showSummary() {
+        System.out.println("===== PLANNER SUMMARY =====");
+        if (items.isEmpty()) {
+            System.out.println("No tasks/events added yet.\n");
+            return;
+        }
+        for (Plannable p : items) {
+            if (p instanceof Task)
+                System.out.println("[Task]  " + p.getTitle());
+            else if (p instanceof Event)
+                System.out.println("[Event] " + p.getTitle());
+        }
+        System.out.println("===========================\n");
+    }
+
+    public void showCalendar() {
+        calendarView.displayCalendar();
+    }
+
+    public void viewTodaySchedule() {
+        LocalDate today = LocalDate.now();
+
+        List<Task> tasks = items.stream()
+                .filter(i -> i instanceof Task)
+                .map(i -> (Task) i)
+                .filter(t -> t.getDueDate().equals(today))
+                .toList();
+
+        List<Event> events = items.stream()
+                .filter(i -> i instanceof Event)
+                .map(i -> (Event) i)
+                .filter(e -> e.getDate().equals(today))
+                .toList();
+
+        System.out.println("=== TODAY'S SCHEDULE (" + today + ") ===");
+
+        System.out.println("\nTasks:");
+        if (tasks.isEmpty())
+            System.out.println("No tasks due today.");
+        tasks.forEach(t -> System.out.println("• " + t.getTitle()));
+
+        System.out.println("\nEvents:");
+        if (events.isEmpty())
+            System.out.println("No events scheduled today.");
+        events.forEach(e -> System.out.println("• " + e.getTitle()));
+    }
+
+    public void countItems() {
+        long t = items.stream().filter(p -> p instanceof Task).count();
+        long e = items.stream().filter(p -> p instanceof Event).count();
+
+        System.out.println("Total Tasks: " + t);
+        System.out.println("Total Events: " + e + "\n");
+    }
+
+    public void generateDailyReport() {
+        LocalDate today = LocalDate.now();
+
+        long completed = items.stream()
+                .filter(i -> i instanceof Task)
+                .map(i -> (Task) i)
+                .filter(Task::isCompleted)
+                .filter(t -> t.getDueDate().equals(today))
+                .count();
+
+        long pending = items.stream()
+                .filter(i -> i instanceof Task)
+                .map(i -> (Task) i)
+                .filter(t -> !t.isCompleted())
+                .filter(t -> t.getDueDate().equals(today))
+                .count();
+
+        long events = items.stream()
+                .filter(i -> i instanceof Event)
+                .map(i -> (Event) i)
+                .filter(e -> e.getDate().equals(today))
+                .count();
+
+        System.out.println("\n=== DAILY REPORT (" + today + ") ===");
+        System.out.println("Completed tasks: " + completed);
+        System.out.println("Pending tasks: " + pending);
+        System.out.println("Scheduled events: " + events);
+
+        if (pending == 0 && completed > 0)
+            System.out.println("Yesssssssssss! All tasks completed for today ab Rest karo");
+        else if (pending > 0)
+            System.out.println("You have " + pendingTasks + " tasks to complete. Keep going!");
+
+    }
+}
+
+public class finalpbl {
+
+    public static void main(String[] args) {
+
+        Planner planner = new Planner();
+        Scanner sc = new Scanner(System.in);
+        System.out.println("\n************Welcome to TickIt Planner************");
+
+        boolean exit = false;
+        while (!exit) {
+            boolean taskExit = false, eventExit = false;
+            System.out.println("\n======= MAIN MENU =======");
+            System.out.println("1. Task Related");
+            System.out.println("2. Event Related");
+            System.out.println("3. Display both events & tasks");
+            System.out.println("4. Search by Date");
+            System.out.println("5. Set Reminder for task/event");
+            System.out.println("6. Add Simple Reminder");
+            System.out.println("7. Show reminders");
+            System.out.println("8. Show Calendar (Composition)");
+            System.out.println("9. Count Items");
+            System.out.println("10. Show Summary");
+            System.out.println("11. View Today's Schedule");
+            System.out.println("12. Generate Daily Report");
+            System.out.println("13. Exit");
+            System.out.print("Enter choice: ");
+            int choice = getIntInput(sc);
+
+            switch (choice) {
+                case 1: {
+                    while (!taskExit) {
+                        System.out.println("\nWELCOME TO TASK RELATED OPTIONS! ");
+                        System.out.println("1. Add task");
+                        System.out.println("2. Update tasks");
+                        System.out.println("3. Delete task");
+                        System.out.println("4. Mark Tasks Complete");
+                        System.out.println("5. Display Tasks ");
+                        System.out.println("6. Return to main menu ");
+                        System.out.print("Enter your choice: ");
+                        int choice1 = getIntInput(sc);
+                        switch (choice1) {
+                            case 1:
+                                System.out.print("\nEnter task title: ");
+                                String title = sc.nextLine();
+                                System.out.print("Enter description: ");
+                                String desc = sc.nextLine();
+                                System.out.print("Enter due date (YYYY-MM-DD): ");
+                                String date = sc.nextLine();
+                                System.out.println("Select priority: 1.HIGH 2.MEDIUM 3.LOW");
+                                int pr = getIntInput(sc);
+                                Priority p = pr == 1 ? Priority.HIGH : pr == 3 ? Priority.LOW : Priority.MEDIUM;
+                                planner.addTask(title, desc, LocalDate.parse(date), p);
+                                break;
+                            case 2:
+                                System.out.print("\nEnter title to update: ");
+                                planner.updateItem(sc.nextLine(), sc);
+                                break;
+                            case 3:
+                                System.out.print("\nEnter title to delete: ");
+                                planner.deleteItem(sc.nextLine());
+                                break;
+                            case 4:
+                                System.out.print("\nEnter task title to mark complete: ");
+                                planner.markTaskComplete(sc.nextLine());
+                                break;
+                            case 5:
+                                planner.displayTasksOnly();
+                                break;
+                            case 6:
+                                taskExit = true;
+                                break;
+                            default:
+                                System.out.println("Invalid option.");
+                        }
+                    }
+                    break;
+                }
+
+                case 2: {
+                    while (!eventExit) {
+                        System.out.println("\nWELCOME TO EVENT RELATED OPTIONS! ");
+                        System.out.println("1. Add Event");
+                        System.out.println("2. Update Event");
+                        System.out.println("3. Delete Event");
+                        System.out.println("4. Display Events ");
+                        System.out.println("5. Return to main menu");
+                        System.out.print("Enter your choice: ");
+                        int choice2 = getIntInput(sc);
+                        switch (choice2) {
+                            case 1:
+                                System.out.print("\nEnter event title: ");
+                                String etitle = sc.nextLine();
+                                System.out.print("Enter description: ");
+                                String edesc = sc.nextLine();
+                                System.out.print("Enter date (YYYY-MM-DD): ");
+                                String edate = sc.nextLine();
+                                System.out.print("Enter start time (HH:MM): ");
+                                String st = sc.nextLine();
+                                System.out.print("Enter end time (HH:MM): ");
+                                String et = sc.nextLine();
+                                System.out.print("Enter location: ");
+                                String loc = sc.nextLine();
+                                planner.addEvent(etitle, edesc, LocalDate.parse(edate), LocalTime.parse(st),
+                                        LocalTime.parse(et), loc);
+                                break;
+                            case 2:
+                                System.out.print("\nEnter title to update: ");
+                                planner.updateItem(sc.nextLine(), sc);
+                                break;
+                            case 3:
+                                System.out.print("\nEnter title to delete: ");
+                                planner.deleteItem(sc.nextLine());
+                                break;
+                            case 4:
+                                planner.displayEventsOnly();
+                                break;
+                            case 5:
+                                eventExit = true;
+                                break;
+                            default:
+                                System.out.println("Invalid option.");
+                        }
+                    }
+                    break;
+                }
+
+                case 3:
+                    planner.displayAll();
+                    break;
+                case 4:
+                    System.out.print("\nEnter date to search (YYYY-MM-DD): ");
+                    planner
+                            .searchByDate(sc.nextLine());
+                    break;
+                case 5:
+                    System.out.print("\nEnter title to set reminder (string): ");
+                    String t = sc.nextLine();
+                    System.out
+                            .print("Enter reminder time (e.g. 2025-11-08 16:30): ");
+                    planner.setReminder(t,
+                            sc.nextLine());
+                    break;
+
+                case 6:
+                    System.out.print("Enter reminder message: ");
+                    String msg = sc.nextLine();
+                    System.out
+                            .print("Enter reminder time (HH:MM): ");
+                    LocalTime rtime = LocalTime.parse(sc.nextLine());
+                    planner
+                            .addSimpleReminder(msg, rtime);
+                    break;
+                case 7:
+                    planner.displayTimeBasedReminders();
+                    break;
+                case 8:
+                    planner.showCalendar();
+                    break;
+                case 9:
+                    System.out.println("\n");
+                    planner.countItems();
+                    break;
+                case 10:
+                    System.out.println("\n");
+                    planner.showSummary();
+                    break;
+                case 11:
+                    System.out.println("\n");
+                    planner.viewTodaySchedule();
+                    break;
+                case 12:
+                    System.out.println("\n");
+                    planner.generateDailyReport();
+                    break;
+
+                case 13:
+                    System.out.println("\nExiting from TickIt Planner. Goodbye!");
+                    exit = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid choice! Try again.");
+            }
+            planner.processReminders();
+        }
+        sc.close();
+    }
+
+    private static int getIntInput(Scanner sc) {
+        while (true) {
+            try {
+                return Integer.parseInt(sc.nextLine().trim());
+            } catch (Exception e) {
+                System.out.print("Enter valid number: ");
+            }
+        }
+    }
+}

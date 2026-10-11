@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TickIt Planner</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app-container">
+        
+        <!-- Auth Section (Login/Register) -->
+        <section id="auth-section" class="active-section">
+            <div class="auth-box">
+                <h1 class="logo">TickIt</h1>
+                <p class="subtitle">Your modern planner</p>
+                
+                <div class="tabs">
+                    <button id="tab-login" class="active-tab" onclick="switchAuthTab('login')">Login</button>
+                    <button id="tab-register" onclick="switchAuthTab('register')">Register</button>
+                </div>
+                
+                <form id="auth-form" onsubmit="handleAuth(event)">
+                    <input type="text" id="username" placeholder="Username" required>
+                    <input type="password" id="password" placeholder="Password" required>
+                    <button type="submit" id="auth-btn">Login</button>
+                </form>
+                <div id="auth-msg"></div>
+            </div>
+        </section>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="hidden">
+            <nav class="sidebar">
+                <h2 class="logo-small">TickIt</h2>
+                
+                <div class="profile-card" id="sidebar-profile">
+                    <div class="profile-avatar" id="profile-initial">?</div>
+                    <div class="profile-info">
+                        <h4 id="profile-username">User</h4>
+                        <div class="profile-stats">
+                            <span title="Total Tasks">📋 <span id="profile-total-tasks">0</span></span>
+                            <span title="Completed Tasks">✔ <span id="profile-completed-tasks">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <ul>
+                    <li onclick="showPage('dashboard')" class="active-nav">Dashboard</li>
+                    <li onclick="showPage('tasks')">Todo List</li>
+                    <li onclick="showPage('calendar')">Calendar</li>
+                    <li onclick="showPage('add-task')">Add Task</li>
+                    <li onclick="showPage('add-event')">Add Event</li>
+                    <li onclick="showPage('reminders')">Reminders</li>
+                </ul>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </nav>
+
+            <main class="main-content">
+                <!-- Dashboard Page -->
+                <div id="page-dashboard" class="page active-page">
+                    <h2>Dashboard</h2>
+                    
+                    <div class="progress-container">
+                        <div class="progress-header">
+                            <span>Overall Progress</span>
+                            <span id="stat-progress-text">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="stat-progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card animated">
+                            <h3>Total Tasks</h3>
+                            <p id="stat-total-tasks">0</p>
+                        </div>
+                        <div class="stat-card animated">
+                            <h3>Completed</h3>
+                            <p id="stat-completed-tasks">0</p>
+                        </div>
+                        <div class="stat-card animated">
+                            <h3>Pending</h3>
+                            <p id="stat-pending-tasks">0</p>
+                        </div>
+                        <div class="stat-card alert-card animated">
+                            <h3>Overdue</h3>
+                            <p id="stat-overdue-tasks">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-panels">
+                        <div class="panel">
+                            <h3>Today's Upcoming Tasks</h3>
+                            <div id="today-schedule-list" class="task-list"></div>
+                        </div>
+                        <div class="panel">
+                            <h3>Upcoming Events</h3>
+                            <div id="upcoming-events-list" class="task-list"></div>
+                        </div>
+                        <div class="panel">
+                            <h3>Recent Activity</h3>
+                            <ul id="recent-activity-list" class="activity-list">
+                                <!-- Activities will be injected here -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasks List Page -->
+                <div id="page-tasks" class="page hidden">
+                    <div class="header-flex">
+                        <h2>Todo List</h2>
+                        <div class="filters">
+                            <select id="task-filter" onchange="fetchTasks()">
+                                <option value="all">All</option>
+                                <option value="pending">Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="kanban-board" id="kanban-board">
+                        <!-- Columns generated by JS -->
+                    </div>
+                </div>
+
+                <!-- Calendar Page -->
+                <div id="page-calendar" class="page hidden">
+                    <h2>Interactive Calendar</h2>
+                    
+                    <div class="calendar-layout">
+                        <!-- Main Calendar Area -->
+                        <div class="calendar-main">
+                            <div class="calendar-header">
+                                <button onclick="changeMonth(-1)" class="secondary-btn">&lt; Prev</button>
+                                <h3 id="calendar-month-year"></h3>
+                                <button onclick="changeMonth(1)" class="secondary-btn">Next &gt;</button>
+                            </div>
+                            <div class="calendar-days">
+                                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                            </div>
+                            <div class="calendar-grid" id="calendar-grid">
+                                <!-- Cells generated by JS -->
+                            </div>
+                        </div>
+                        
+                        <!-- Sidebar / Details Area -->
+                        <div class="calendar-sidebar">
+                            <div class="panel day-details">
+                                <h3 id="selected-date-title">Selected Date</h3>
+                                <div id="selected-date-tasks" class="task-list"></div>
+                            </div>
+                            <div class="panel weekly-preview">
+                                <h3>7-Day Preview</h3>
+                                <div id="weekly-preview-list" class="task-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Task Page -->
+                <div id="page-add-task" class="page hidden">
+                    <h2>Add New Task</h2>
+                    <form id="add-task-form" onsubmit="handleAddTask(event)">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="task-title" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="task-desc" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="inline-form">
+                            <div class="form-group" style="flex:1">
+                                <label>Due Date</label>
+                                <input type="date" id="task-date" required>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label>Priority</label>
+                                <select id="task-priority">
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="LOW">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="inline-form">
+                            <div class="form-group" style="flex:1">
+                                <label>Category</label>
+                                <select id="task-category">
+                                    <option value="Work">Work</option>
+                                    <option value="Personal">Personal</option>
+                                    <option value="Shopping">Shopping</option>
+                                    <option value="Fitness">Fitness</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label>Color Label</label>
+                                <input type="color" id="task-color" value="#4F46E5" style="height:44px; padding:2px">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Recurrence</label>
+                            <select id="task-recurrence">
+                                <option value="none">None</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Checklist / Subtasks</label>
+                            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                                <input type="text" id="subtask-input" placeholder="Add a subtask...">
+                                <button type="button" class="secondary-btn" onclick="addSubtaskDraft()">Add</button>
+                            </div>
+                            <ul id="draft-subtasks-list" class="activity-list" style="margin-bottom:15px"></ul>
+                        </div>
+
+                        <button type="submit" class="primary-btn">Create Task</button>
+                    </form>
+                </div>
+
+                <!-- Add Event Page -->
+                <div id="page-add-event" class="page hidden">
+                    <h2>Add New Event</h2>
+                    <form id="add-event-form" onsubmit="handleAddEvent(event)">
+                        <div class="form-group">
+                            <label>Event Title</label>
+                            <input type="text" id="event-title" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="event-desc" rows="2"></textarea>
+                        </div>
+                        
+                        <div class="inline-form">
+                            <div class="form-group" style="flex:1">
+                                <label>Date & Time</label>
+                                <input type="datetime-local" id="event-datetime" required>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label>Priority</label>
+                                <select id="event-priority">
+                                    <option value="HIGH">High</option>
+                                    <option value="MEDIUM">Medium</option>
+                                    <option value="LOW">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="inline-form">
+                            <div class="form-group" style="flex:1">
+                                <label>Category</label>
+                                <select id="event-category">
+                                    <option value="Meeting">Meeting</option>
+                                    <option value="Personal">Personal</option>
+                                    <option value="Holiday">Holiday</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1">
+                                <label>Color Label</label>
+                                <input type="color" id="event-color" value="#10B981" style="height:44px; padding:2px">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="primary-btn">Create Event</button>
+                    </form>
+                </div>
+
+                <!-- Reminders Page -->
+                <div id="page-reminders" class="page hidden">
+                    <h2>Reminders</h2>
+                    <form id="add-reminder-form" onsubmit="handleAddReminder(event)" class="inline-form">
+                        <input type="text" id="rem-msg" placeholder="Reminder Message" required style="flex: 2">
+                        <input type="datetime-local" id="rem-time" required style="flex: 1">
+                        <select id="rem-priority" style="flex: 1; padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-dark); color: white;">
+                            <option value="HIGH">High</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="LOW">Low</option>
+                        </select>
+                        <button type="submit">Set Reminder</button>
+                    </form>
+                    <div class="reminders-layout" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                        <div class="panel">
+                            <h3>Upcoming Reminders</h3>
+                            <div id="reminders-upcoming-list" class="task-list"></div>
+                        </div>
+                        <div class="panel alert-panel" style="border-color: var(--danger); background: rgba(239, 68, 68, 0.05);">
+                            <h3 style="color: var(--danger); border-color: var(--danger);">Overdue Alerts</h3>
+                            <div id="reminders-overdue-list" class="task-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </section>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
